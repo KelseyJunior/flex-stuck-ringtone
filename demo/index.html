@@ -83,6 +83,16 @@
       #toasts { position: fixed; top: 16px; right: 16px; left: 16px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; pointer-events: none; }
       .toast { background: var(--danger); color: #fff; padding: 10px 14px; border-radius: 8px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2); font-weight: 600; max-width: 100%; }
       ol { margin: 0; padding-left: 20px; color: var(--muted); }
+      .guide { margin-bottom: 16px; }
+      .guide p { color: var(--text); }
+      .legend { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 0 0 12px; }
+      .legend li { display: flex; align-items: baseline; gap: 8px; }
+      .legend .dot { transform: translateY(1px); }
+      .dot { width: 12px; height: 12px; border-radius: 50%; flex: none; }
+      .dot.silent { background: var(--border); }
+      .dot.ringing { background: var(--accent); }
+      .dot.stuck { background: var(--danger); }
+      .guide .expect { margin: 0; }
     </style>
   </head>
   <body>
@@ -100,6 +110,27 @@
         <a data-fix="on">With the fix</a>
       </nav>
       <p>Mode: <strong id="mode"></strong></p>
+
+      <section class="card guide">
+        <h2>How this page works</h2>
+        <p>
+          The <strong>audio player is Flex's own code</strong>, taken unchanged from the installed
+          <code>@twilio/flex-ui</code> package, and the <strong>sound is your browser's</strong>. Only TaskRouter is
+          simulated: the buttons play its part ("a reservation arrives", "the agent goes Offline, so pending
+          reservations are rejected"). The server delays the ringtone file to stand for a slow network.
+        </p>
+        <ul class="legend">
+          <li><span class="dot silent"></span><span><strong>Silent</strong>: nothing playing.</span></li>
+          <li>
+            <span class="dot ringing"></span><span><strong>Ringing</strong>: a reservation is pending. This is normal.</span>
+          </li>
+          <li>
+            <span class="dot stuck"></span
+            ><span><strong>Stuck</strong>: ringing with <em>no</em> pending reservation. This is the bug.</span>
+          </li>
+        </ul>
+        <p class="expect"><strong>What to expect:</strong> <span id="expect"></span></p>
+      </section>
 
       <div class="grid">
         <section class="card">

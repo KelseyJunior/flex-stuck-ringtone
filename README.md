@@ -11,6 +11,32 @@ the agent then switches to an unavailable activity (for example Offline), Flex:
    it any more. Later reservations don't get their own ringtone, and their end doesn't
    stop the loop either. Only a page reload stops it.
 
+### In plain words
+
+Flex plays every ringtone through **one shared speaker** (a single `<audio>` element),
+with a **queue** in front of it:
+
+1. Two reservations arrive. The first ringtone starts loading; the second waits in the queue.
+2. Before the sound has loaded, the agent goes Offline and both reservations are rejected.
+3. Flex stops the first ringtone. The browser cancels its loading and answers "cancelled".
+   Flex takes that for an **error** and shows "Error playing media.".
+4. While handling that error, Flex announces "finished" on the shared speaker. The
+   second ringtone has just started loading, and it is the one that hears it. Flex takes
+   the second ringtone off its list, **but its sound keeps loading**.
+5. The sound finishes loading and starts looping.
+6. When Flex is asked to stop the second ringtone, it's no longer on its list, so Flex does
+   nothing. **The ringtone plays until the page is reloaded.** While it does, new
+   reservations don't get a ringtone of their own.
+
+It only happens when reservations arrive while a ringtone is still loading and end before
+it has loaded. That's why it is intermittent, and more frequent on slow networks.
+
+The fix belongs in Flex UI (see [Possible fixes in Flex UI](#possible-fixes-in-flex-ui)).
+Until then, [the workaround](#the-workaround) detects a ringtone playing with no pending
+reservation and stops it.
+
+### Try it
+
 Everything in this repository runs the **actual audio player code shipped in the
 `@twilio/flex-ui` package**, not a copy of it (see [How the tests work](#how-the-tests-work)).
 
@@ -43,6 +69,8 @@ play other sequences. `?delay=<ms>` changes the ringtone's load time.
 
 ## Contents
 
+- [In plain words](#in-plain-words)
+- [Try it](#try-it)
 - [Environment](#environment)
 - [Reproducing it in a real Flex instance](#reproducing-it-in-a-real-flex-instance)
 - [Root cause](#root-cause)

@@ -9,12 +9,7 @@ export { FLEX_UI_VERSION };
 const requireFromHere = createRequire(__filename);
 
 /**
- * Loads the real `AudioPlayerManager` shipped in the installed `@twilio/flex-ui` bundle,
- * in Node, without loading the rest of Flex (which needs a full browser, React, …).
- *
- * `AudioPlayerManager`, `AudioPlayer`, `MediaQueue` and `AudioErrorCode` run exactly as
- * shipped (see `flexAudioModules.js`); `queue` and `uuid` are the real packages.
- *
+ * The Flex UI audio player from the installed bundle (see `flexAudioModules.js`), in Node.
  * `globalThis.Audio` must be installed first (see `FakeAudio`).
  */
 export const loadFlexAudioPlayer = (): FlexAudioPlayer => {

@@ -136,15 +136,11 @@ notifications.on('notificationProcessed', (id: string, cancelled: boolean) => {
   }
 });
 
-$('#mode').textContent = withFix ? 'With the workaround' : 'Flex as shipped (no workaround)';
 $('#version').textContent = FLEX_UI_VERSION;
 $('#expect').textContent = withFix
-  ? 'click "Run the scenario". No error shows. The ringtone starts once its file loads, the workaround sees it ' +
-    'playing with no pending reservation and stops it within half a second, and the bell goes back to Silent. ' +
-    'Switch to "Without the fix" to compare.'
-  : 'click "Run the scenario". "Error playing media." shows right away. About 1.5 s later the ringtone starts and ' +
-    'never stops: the bell turns red (Stuck) while both reservations are rejected. Click "Reset" to start over, ' +
-    'or switch to "With the fix" to compare.';
+  ? 'no error shows. The ringtone starts once its file loads and the workaround stops it within half a second.'
+  : '"Error playing media." shows right away. Once the file loads, the ringtone starts and never stops (Stuck). ' +
+    'Click "Reset" to start over.';
 $('#delay').textContent = String(ringtoneDelayMs);
 document.querySelectorAll<HTMLAnchorElement>('[data-fix]').forEach((link) => {
   const url = new URL(location.href);

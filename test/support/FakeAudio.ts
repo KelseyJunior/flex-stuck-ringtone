@@ -8,12 +8,10 @@
  *   ("The play() request was interrupted by a call to pause()");
  * - assigning `src` runs the load algorithm: playback stops, and a pending `play()` is
  *   rejected with an `AbortError` ("…interrupted by a new load request");
- * - promise rejections are delivered as microtasks, like in a browser.
+ * - rejections arrive asynchronously, after the calling code has returned (as microtasks
+ *   here; browsers queue a task for `pause()`, which leads to the same result).
  *
- * `ended` is never fired on its own, since every ringtone loops. The Flex player
- * dispatches `ended` itself, which is exactly where the bug lives.
- *
- * `FakeAudio.audible()` tells what a person in front of the screen would hear.
+ * `ended` is never fired on its own, since every ringtone loops; Flex dispatches it itself.
  */
 
 interface PendingPlay {

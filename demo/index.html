@@ -100,17 +100,14 @@
     <main>
       <h1>Flex UI: ringtone keeps looping after the agent goes Offline</h1>
       <p>
-        The real audio player of <code>@twilio/flex-ui</code> <strong id="version"></strong>, playing through this
-        browser's <code>&lt;audio&gt;</code>. The ringtone takes <strong id="delay"></strong> ms to load, standing
-        for a slow network or a large file. Turn your sound on.
+        <code>@twilio/flex-ui</code> <span id="version"></span> · ringtone load time <span id="delay"></span> ms ·
+        turn your sound on
       </p>
 
       <nav class="modes" aria-label="Mode">
         <a data-fix="off">Without the fix</a>
         <a data-fix="on">With the fix</a>
       </nav>
-      <p>Mode: <strong id="mode"></strong></p>
-
       <section class="card guide">
         <h2>How this page works</h2>
         <p>
@@ -136,11 +133,7 @@
         <section class="card">
           <h2>Reproduce</h2>
           <button id="reproduce" class="primary">Run the scenario</button>
-          <ol>
-            <li>Two reservations arrive while the agent is Available.</li>
-            <li>The agent goes Offline before the ringtone has loaded.</li>
-            <li>Without the fix: "Error playing media." shows, then the ringtone loops forever.</li>
-          </ol>
+          <p>Two reservations arrive, then the agent goes Offline before the ringtone has loaded.</p>
           <h2 style="margin-top: 16px">Step by step</h2>
           <button id="receive-one">1 reservation arrives</button>
           <button id="receive-two">2 reservations arrive</button>

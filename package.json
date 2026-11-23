@@ -1,0 +1,25 @@
+{
+  "name": "flex-stuck-ringtone",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Reproduction and workaround for a Twilio Flex UI audio player race that leaves a ringtone looping with no pending reservation.",
+  "license": "MIT",
+  "scripts": {
+    "test": "jest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@twilio/flex-ui": "2.18.0",
+    "@types/jest": "29.5.14",
+    "@types/node": "26.6.6",
+    "acorn": "8.19.0",
+    "jest": "29.7.0",
+    "react": "17.0.2",
+    "react-dom": "17.0.2",
+    "ts-jest": "29.4.15",
+    "typescript": "5.9.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

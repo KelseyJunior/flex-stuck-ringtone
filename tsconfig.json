@@ -2,13 +2,26 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "commonjs",
-    "lib": ["ES2020", "DOM"],
+    "lib": [
+      "ES2020",
+      "DOM"
+    ],
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "isolatedModules": true,
-    "types": ["jest", "node"],
+    "allowJs": true,
+    "types": [
+      "jest",
+      "node"
+    ],
     "noEmit": true
   },
-  "include": ["src", "test"]
+  "include": [
+    "src",
+    "test",
+    "demo",
+    "e2e",
+    "playwright.config.ts"
+  ]
 }

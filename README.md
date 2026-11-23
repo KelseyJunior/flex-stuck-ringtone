@@ -11,13 +11,33 @@ the agent then switches to an unavailable activity (for example Offline), Flex:
    it any more. Later reservations don't get their own ringtone, and their end doesn't
    stop the loop either. Only a page reload stops it.
 
-The tests in this repository run the **actual audio player code shipped in the
+Everything in this repository runs the **actual audio player code shipped in the
 `@twilio/flex-ui` package**, not a copy of it (see [How the tests work](#how-the-tests-work)).
 
 ```sh
 npm install
-npm test
+npm test                         # Jest: the race step by step, on a simulated <audio>
+npx playwright install chromium  # once
+npm run test:browser             # Playwright: the same race in a real Chromium
+npm run demo                     # open http://localhost:4173 and listen to it
 ```
+
+### See and hear it in your browser
+
+`npm run demo` serves a page that runs the real Flex UI audio player through your
+browser's own `<audio>` element. The ringtone is served with a 1.5 s delay, which
+stands for a slow network or a large file. Turn your sound on, then:
+
+1. Pick **Without the fix** and click **Run the scenario**. Two reservations arrive
+   and the agent goes Offline before the ringtone has loaded. "Error playing media." shows
+   up, and a moment later the ringtone starts and loops forever, with no pending
+   reservation.
+2. Pick **With the fix** and run the same scenario. The ringtone stops within half a second
+   of starting, and no error is shown.
+
+The page shows what the agent hears, `AudioPlayerManager.isPlaying()`, the state of the
+`<audio>` element, the reservations and a log of events. The step-by-step buttons let you
+play other sequences. `?delay=<ms>` changes the ringtone's load time.
 
 ---
 
@@ -316,19 +336,26 @@ Known limitations:
 | [`test/flexAudioPlayerRace.test.ts`](test/flexAudioPlayerRace.test.ts) | **The bug**, against the real Flex player, with no workaround. Normal cases still work; the race leaves a ringtone looping with 2, 3 and 5 reservations; it only happens when events arrive in separate tasks; it already strikes while a reservation is pending; later reservations neither ring nor stop the loop. |
 | [`test/ringtoneGuard.flex.test.ts`](test/ringtoneGuard.flex.test.ts) | **The workaround**, against the same real player and the same race. It releases the loop, hides the spurious error, Flex rings normally afterwards, it doesn't touch a legitimate ringtone, and it changes nothing when there is no race. |
 | [`src/ringtoneGuard.test.ts`](src/ringtoneGuard.test.ts) | Unit tests of the workaround's own logic, with a mocked player: timings, statuses, the notification filter. |
+| [`e2e/stuckRingtone.spec.ts`](e2e/stuckRingtone.spec.ts) | **The bug and the workaround in a real Chromium** (Playwright, through the demo page). It uses the browser's real `<audio>` and a ringtone served over HTTP with a delay. Without the workaround, the race leaves the element playing (`paused === false`, `currentTime` moving) with no pending reservation, after "Error playing media.". With it, the ringtone stops, no error shows, and the next reservation rings and stops normally. It passed 40 runs out of 40 (`--repeat-each=10`). |
 
 **The Flex code runs as shipped.**
-[`test/support/loadFlexAudioPlayer.ts`](test/support/loadFlexAudioPlayer.ts) parses the
+[`test/support/flexAudioModules.js`](test/support/flexAudioModules.js) parses the
 installed `node_modules/@twilio/flex-ui/bundle/twilio-flex.prod.js` (a webpack build).
 It finds the `AudioPlayerManager`, `AudioPlayer`, `MediaQueue` and `AudioErrorCode`
-modules by their content, and evaluates them untouched. Their webpack externals
-(`queue`, `uuid`) resolve to the real packages. The logger and `ErrorManager` are
-replaced by inert stubs, since they take no part in playback. Loading the whole bundle
-isn't possible in Node, because it needs a full browser.
+modules by their content and takes their source verbatim. Then
+[`test/support/flexRuntime.ts`](test/support/flexRuntime.ts) instantiates them with a
+minimal webpack runtime:
+- in Node for Jest, through [`loadFlexAudioPlayer.ts`](test/support/loadFlexAudioPlayer.ts);
+- in the browser for the demo and Playwright, bundled by [`demo/server.js`](demo/server.js).
 
-**The browser is the only thing simulated.**
+Their webpack externals (`queue`, `uuid`) resolve to the real packages. The logger and
+`ErrorManager` are replaced by inert stubs, since they take no part in playback. Loading
+the whole bundle outside a full Flex app isn't possible.
+
+**In Jest, the browser is the only thing simulated.**
 [`test/support/FakeAudio.ts`](test/support/FakeAudio.ts) implements the parts of the HTML
-media element spec the player relies on:
+media element spec the player relies on. The Playwright tests then confirm the same
+behaviour with Chromium's real `<audio>`:
 - `play()` returns a promise that resolves once the file has loaded (300 ms, on Jest's
   fake timers);
 - `pause()` and assigning `src` reject a pending `play()` with an `AbortError`,
@@ -336,8 +363,8 @@ media element spec the player relies on:
 
 `FakeAudio.audible()` tells what the agent would actually hear.
 
-**Flex's ringtone logic is reproduced in a few lines.**
-[`test/support/flexHarness.ts`](test/support/flexHarness.ts) contains `playSound`,
+**Flex's ringtone logic is reproduced in a few lines**, shared by Jest and the demo.
+[`test/support/flexSession.ts`](test/support/flexSession.ts) contains `playSound`,
 `stopSound`, `handlePlayError` and `shouldSkipTask` from Flex's `WorkerListener`. The
 minified original is quoted next to it. It also has a fake TaskRouter worker that
 delivers each reservation event as a separate task, like the websocket does.
@@ -359,12 +386,20 @@ src/
   ringtoneGuard.ts            the workaround
   ringtoneGuard.test.ts       its unit tests
 test/
-  flexAudioPlayerRace.test.ts reproduction of the bug (real Flex player)
-  ringtoneGuard.flex.test.ts  the workaround against the real Flex player
+  flexAudioPlayerRace.test.ts reproduction of the bug (real Flex player, Jest)
+  ringtoneGuard.flex.test.ts  the workaround against the real Flex player (Jest)
   support/
-    loadFlexAudioPlayer.ts    loads the audio player modules from the Flex UI bundle
+    flexAudioModules.js       finds the audio player modules in the Flex UI bundle
+    flexRuntime.ts            instantiates them (Node and browser)
+    loadFlexAudioPlayer.ts    loads them in Node
+    flexSession.ts            Flex's ringtone logic + fake TaskRouter worker
+    flexHarness.ts            Jest session: the above on FakeAudio and fake timers
     FakeAudio.ts              browser-like HTMLAudioElement
-    flexHarness.ts            Flex's ringtone logic + fake TaskRouter worker
+demo/
+  server.js                   serves the page, bundles the app, serves a slow ringtone
+  index.html, app.ts          the demo page (with / without the fix)
+e2e/
+  stuckRingtone.spec.ts       the bug and the workaround in a real Chromium
 ```
 
 Requires Node.js 18 or later.

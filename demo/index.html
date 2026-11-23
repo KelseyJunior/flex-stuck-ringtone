@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Flex Stuck Ringtone</title>
+    <style>
+      :root {
+        --bg: #f6f7f9;
+        --surface: #ffffff;
+        --text: #121c2d;
+        --muted: #606b85;
+        --border: #e1e3ea;
+        --accent: #0263e0;
+        --accent-text: #ffffff;
+        --ok: #0f7a3d;
+        --warn: #b45309;
+        --danger: #d61f1f;
+        --danger-bg: #fef1f1;
+        --ring-bg: #eaf2ff;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #0f1520;
+          --surface: #182131;
+          --text: #e8ecf3;
+          --muted: #9aa5ba;
+          --border: #2b364a;
+          --accent: #4d94ff;
+          --accent-text: #0b1220;
+          --ok: #4ccf86;
+          --warn: #f5b04c;
+          --danger: #ff6b6b;
+          --danger-bg: #3a1c1f;
+          --ring-bg: #16294a;
+        }
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 15px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif;
+      }
+      main { max-width: 960px; margin: 0 auto; padding: 24px 16px 48px; }
+      h1 { font-size: 22px; margin: 0 0 4px; }
+      p { margin: 0 0 12px; color: var(--muted); }
+      code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .modes { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin: 12px 0 20px; }
+      .modes a { padding: 8px 14px; color: var(--text); text-decoration: none; background: var(--surface); }
+      .modes a[aria-current='true'] { background: var(--accent); color: var(--accent-text); font-weight: 600; }
+      .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+      .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+      .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin: 0 0 12px; }
+      button {
+        font: inherit; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border);
+        background: var(--surface); color: var(--text); cursor: pointer; margin: 0 6px 8px 0;
+      }
+      button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+      #bell { display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 10px; background: var(--bg); }
+      #bell .icon { font-size: 28px; }
+      #bell[data-state='ringing'] { background: var(--ring-bg); }
+      #bell[data-state='ringing'] .icon { animation: shake 0.4s infinite; }
+      #bell[data-state='stuck'] { background: var(--danger-bg); color: var(--danger); font-weight: 600; }
+      #bell[data-state='stuck'] .icon { animation: shake 0.4s infinite; }
+      #bell[data-state='silent'] .icon { opacity: 0.4; }
+      @keyframes shake { 0%, 100% { transform: rotate(0); } 25% { transform: rotate(-12deg); } 75% { transform: rotate(12deg); } }
+      dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; margin: 12px 0 0; }
+      dt { color: var(--muted); }
+      dd { margin: 0; overflow-wrap: anywhere; }
+      ul { list-style: none; margin: 0; padding: 0; }
+      #reservations li { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--border); }
+      .status { font-size: 13px; font-weight: 600; }
+      .status.pending { color: var(--accent); }
+      .status.rejected { color: var(--muted); }
+      .status.accepted { color: var(--ok); }
+      .empty { color: var(--muted); }
+      #log { max-height: 280px; overflow: auto; font-size: 13px; }
+      #log li { display: flex; gap: 10px; padding: 3px 0; border-bottom: 1px solid var(--border); }
+      #log time { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 56px; }
+      #log li.warn { color: var(--warn); }
+      #log li.ok { color: var(--ok); }
+      #toasts { position: fixed; top: 16px; right: 16px; left: 16px; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; pointer-events: none; }
+      .toast { background: var(--danger); color: #fff; padding: 10px 14px; border-radius: 8px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2); font-weight: 600; max-width: 100%; }
+      ol { margin: 0; padding-left: 20px; color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <div id="toasts" aria-live="polite"></div>
+    <main>
+      <h1>Flex UI: ringtone keeps looping after the agent goes Offline</h1>
+      <p>
+        The real audio player of <code>@twilio/flex-ui</code> <strong id="version"></strong>, playing through this
+        browser's <code>&lt;audio&gt;</code>. The ringtone takes <strong id="delay"></strong> ms to load, standing
+        for a slow network or a large file. Turn your sound on.
+      </p>
+
+      <nav class="modes" aria-label="Mode">
+        <a data-fix="off">Without the fix</a>
+        <a data-fix="on">With the fix</a>
+      </nav>
+      <p>Mode: <strong id="mode"></strong></p>
+
+      <div class="grid">
+        <section class="card">
+          <h2>Reproduce</h2>
+          <button id="reproduce" class="primary">Run the scenario</button>
+          <ol>
+            <li>Two reservations arrive while the agent is Available.</li>
+            <li>The agent goes Offline before the ringtone has loaded.</li>
+            <li>Without the fix: "Error playing media." shows, then the ringtone loops forever.</li>
+          </ol>
+          <h2 style="margin-top: 16px">Step by step</h2>
+          <button id="receive-one">1 reservation arrives</button>
+          <button id="receive-two">2 reservations arrive</button>
+          <button id="offline">Go Offline</button>
+          <button id="accept">Accept oldest pending</button>
+          <button id="reset">Reset</button>
+        </section>
+
+        <section class="card">
+          <h2>What the agent hears</h2>
+          <div id="bell" data-state="silent">
+            <span class="icon" aria-hidden="true">🔔</span>
+            <span id="bell-label">Silent</span>
+          </div>
+          <dl>
+            <dt>Pending reservations</dt>
+            <dd id="pending">0</dd>
+            <dt><code>isPlaying()</code></dt>
+            <dd id="is-playing">false</dd>
+            <dt><code>&lt;audio&gt;</code></dt>
+            <dd id="audio">not created yet</dd>
+          </dl>
+        </section>
+
+        <section class="card">
+          <h2>Reservations</h2>
+          <ul id="reservations"></ul>
+        </section>
+
+        <section class="card">
+          <h2>Events</h2>
+          <ul id="log"></ul>
+        </section>
+      </div>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>
